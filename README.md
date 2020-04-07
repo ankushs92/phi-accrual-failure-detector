@@ -14,7 +14,9 @@ This is a port of Akka's phi accrual failure detector. Their implementation is t
 
 
 
-## References
+## Giving credit when it's due
 [Phi Accrual Failure Detector](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.80.7427&rep=rep1&type=pdf)
+
 [Akka Implementation](https://doc.akka.io/docs/akka/current/typed/failure-detector.html)
+
 [Hazelcast Implementation](https://github.com/hazelcast/hazelcast/blob/master/hazelcast/src/main/java/com/hazelcast/internal/cluster/fd/FailureDetector.java)
