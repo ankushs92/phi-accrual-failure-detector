@@ -3,7 +3,9 @@ This is a port of Akka's phi accrual failure detector. Their implementation is t
 
 
 ##Todo
+
 -> Implement PhiAccrual as an actor using UDP protocol
+-> Provide callbacks when a suspicion level is reached
 
 ## Bugs
 1. There is a peculiar case when the failure detector wrongly detects a process to have failed if the inter-arrival intervals are 0.
@@ -11,5 +13,5 @@ This is a port of Akka's phi accrual failure detector. Their implementation is t
 
 
 
-# References
-[Phi Accrual](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.80.7427&rep=rep1&type=pdf)
+## References
+[Phi Accrual Failure Detector](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.80.7427&rep=rep1&type=pdf)
