@@ -2,7 +2,7 @@
 This is a port of Akka's phi accrual failure detector. Their implementation is tightly coupled with akka-cluster, due to which it's not possible to use it as a stand alone failure detector.
 
 
-##Todo
+## Todo
 
 1. Implement PhiAccrual as an actor using UDP protocol
 
