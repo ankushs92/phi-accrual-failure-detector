@@ -1,16 +1,18 @@
-package io.github.ankushs92
+package io.ankushs92.thesis.phi_accrual
 
 import java.lang.Math._
+import java.net.InetSocketAddress
 import java.util.concurrent.atomic.AtomicLong
 
-import io.github.ankushs92.PhiAccrual.NO_HEARTBEAT_TIMESTAMP
+import akka.actor.{ActorSystem, Props}
+import com.typesafe.scalalogging.Logger
+import io.ankushs92.thesis.phi_accrual.PhiAccrual.NO_HEARTBEAT_TIMESTAMP
 
 import scala.collection.mutable
 
 
 object PhiAccrual {
   val NO_HEARTBEAT_TIMESTAMP : Long = -1L
-
 }
 
 // Port of Akka Phi Accrual Failure Detector
@@ -19,7 +21,12 @@ case class PhiAccrualFailureDetector(
                        maxWindowSize : Int,
                        minStdDeviationMillis : Double,
                        acceptableHeartbeatPauseMillis : Int,
-                       firstHeartbeatEstimateMillis : Int ) {
+                       firstHeartbeatEstimateMillis : Int,
+                       port : Int = 8090) {
+
+  private val logger = Logger(this.getClass)
+
+  final def getAddr = new InetSocketAddress("localhost", port)
 
   require(threshold > 0.0, "failure-detector.threshold must be > 0")
   require(maxWindowSize > 0, "failure-detector.max-sample-size must be > 0")
@@ -29,12 +36,20 @@ case class PhiAccrualFailureDetector(
 
   private val window = HeartbeatIntervals(maxWindowSize)
   private val bootstrappedStdDev = firstHeartbeatEstimateMillis / 4
-  window.add(Some(firstHeartbeatEstimateMillis - bootstrappedStdDev), NO_HEARTBEAT_TIMESTAMP)
-  window.add(Some(firstHeartbeatEstimateMillis + bootstrappedStdDev), NO_HEARTBEAT_TIMESTAMP)
+
+  this.synchronized {
+    window.add(Some(firstHeartbeatEstimateMillis - bootstrappedStdDev), NO_HEARTBEAT_TIMESTAMP)
+    window.add(Some(firstHeartbeatEstimateMillis + bootstrappedStdDev), NO_HEARTBEAT_TIMESTAMP)
+    //Launch actor
+    val actorSystem = ActorSystem("Failure-Detector-Actor-System")
+    actorSystem.actorOf(Props(classOf[FailureDetectorActor], this, actorSystem))
+  }
 
   //Add to the window
   def heartbeat(ms : Long) = {
     window.synchronized {
+      logger.info(s"Heartbeat received : $ms")
+      logger.trace(s"Heartbeats : $window")
       val lastTimestamp = window.lastTimestamp
       if(NO_HEARTBEAT_TIMESTAMP != lastTimestamp) {
         val diff = (ms - lastTimestamp).toInt
@@ -101,7 +116,8 @@ case class HeartbeatIntervals(windowSize : Int) {
   require(windowSize > 0, "windowSize should be greater than 0 always")
 
   private val queue = new mutable.Queue[Int]()
-  private var intervalSum = 0.0 // for mean
+  // TODO : Should the foll 2 variables be AtomicReference? Think on race conditions or if it even makes sense
+  private var intervalSum = 0.0 // for mean.
   private var intervalSumSq = 0.0 // for variance
   private val lastTimestampAtomic = new AtomicLong(NO_HEARTBEAT_TIMESTAMP)
 
@@ -150,10 +166,10 @@ object PhiAccrualTest extends App {
   val firstHeartbeatEstimateMillis = 10
 
   val failureDetector = PhiAccrualFailureDetector(threshold, maxSampleSize, minStdDeviationMillis, acceptableHeartbeatPauseMillis, firstHeartbeatEstimateMillis)
-//  var initial = 1586286461860L
-  for(i <- Range(0, 1000)) {
-    failureDetector.heartbeat(System.currentTimeMillis())
-  }
+////  var initial = 1586286461860L
+//  for(i <- Range(0, 1000)) {
+//    failureDetector.heartbeat(System.currentTimeMillis())
+//  }
 
 
 }
